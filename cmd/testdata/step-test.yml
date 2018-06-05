@@ -1,0 +1,27 @@
+---
+step:
+  id: status
+  event:
+    packName: Slack
+    name: ReceivedMessage
+  criteria: "{{ Event.Payload.message|match:'^flyte status$' }}"
+  context:
+    UserID: "{{ Event.Payload.user.id }}"
+  command:
+    packName: Slack
+    name: SendMessage
+    input:
+      channelId: "{{ Context.ChannelID }}"
+      message: 'Hey <@{{ Context.UserID }}>, {{datastore(''message'')}}'
+event:
+  pack:
+    name: Slack
+  event: ReceivedMessage
+  payload:
+    message: flyte status
+    user:
+      id: johnny
+context:
+  ChannelID: '123'
+datastore:
+  message: 'I''m up and running :run:'
