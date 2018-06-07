@@ -10,30 +10,34 @@ import (
 
 const hostFlagName = "host"
 
-var (
-	rootCmd = &cobra.Command{
+var client = &http.Client{
+	Timeout: time.Second * 5,
+}
+
+func newRootCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "flyte",
 		Short: "Command line client for flyte",
 	}
 
-	client = &http.Client{
-		Timeout: time.Second * 5,
-	}
-)
-
-func init() {
-	rootCmd.PersistentFlags().String("host", "", "Flyte host address. Overrides $FLYTE_HOST")
+	cmd.PersistentFlags().String("host", "", "Flyte host address. Overrides $FLYTE_HOST")
 	viper.BindEnv(hostFlagName, "FLYTE_HOST")
-	viper.BindPFlag(hostFlagName, rootCmd.PersistentFlags().Lookup(hostFlagName))
-	rootCmd.AddCommand(
+	viper.BindPFlag(hostFlagName, cmd.PersistentFlags().Lookup(hostFlagName))
+	cmd.AddCommand(
 		newTestCommand(),
 		newUploadCommand(),
 		newVersionCommand(),
 	)
+
+	return cmd
+}
+
+func init() {
 }
 
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+
+	if err := newRootCommand().Execute(); err != nil {
 		os.Exit(1)
 	}
 }
