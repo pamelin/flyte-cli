@@ -1,9 +1,9 @@
 build:
-	dep ensure
+	dep ensure -v
 	go test ./...
 	go build -o flyte
 
 install:
-	dep ensure
+	dep ensure -v
 	go test ./...
 	go build -o $(GOPATH)/bin/flyte
