@@ -32,7 +32,7 @@ func TestUploadCommand_ShouldUploadFlowFromJsonFile(t *testing.T) {
 	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand(rootCmd, "upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", flowFile, "--host="+host)
 	require.NoError(t, err)
 
 	//then
@@ -55,7 +55,7 @@ func TestUploadCommand_ShouldFailWhenFlyteHostReturnsNon201(t *testing.T) {
 
 	host := strings.Replace(ts.URL, "http://", "", -1)
 
-	_, err := executeCommand(rootCmd, "upload", "./testdata/my-flow.json", "--host="+host)
+	_, err := executeCommand("upload", "./testdata/my-flow.json", "--host="+host)
 	require.Error(t, err)
 
 	assert.Contains(t, err.Error(), "cannot upload flow\nHTTP/1.1 400 Bad Request")
@@ -69,7 +69,7 @@ func TestUploadCommand_ShouldFailForNonJsonOrYamlFile(t *testing.T) {
 
 	host := strings.Replace(ts.URL, "http://", "", -1)
 
-	_, err := executeCommand(rootCmd, "upload", "./testdata/my-flow.haha", "--host="+host)
+	_, err := executeCommand("upload", "./testdata/my-flow.haha", "--host="+host)
 	require.Error(t, err)
 
 	assert.Contains(t, err.Error(), "cannot upload flow: unsupported file format .haha")
@@ -90,7 +90,7 @@ func TestUploadCommand_ShouldUploadFlowFromYamlFile(t *testing.T) {
 	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand(rootCmd, "upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", flowFile, "--host="+host)
 	require.NoError(t, err)
 
 	//then
@@ -120,7 +120,7 @@ func TestUploadCommand_ShouldUploadFlowFromYmlFile(t *testing.T) {
 	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand(rootCmd, "upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", flowFile, "--host="+host)
 	require.NoError(t, err)
 
 	//then

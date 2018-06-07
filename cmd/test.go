@@ -11,9 +11,16 @@ import (
 	"github.com/ghodss/yaml"
 	"errors"
 	"path/filepath"
+	"github.com/HotelsDotCom/flyte/flytepath"
+	"strings"
+	"github.com/HotelsDotCom/flyte/httputil"
+	"github.com/spf13/viper"
 )
 
-var format string
+var (
+	dsLookup bool
+	format   string
+)
 
 func newTestCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,7 +34,7 @@ func newTestCommand() *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			output, err := runTestCmd(args[0], format)
+			output, err := runTestCmd(args[0])
 			if err != nil {
 				return err
 			}
@@ -36,11 +43,12 @@ func newTestCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVar(&dsLookup, "ds-lookup", true, "lookup datastore item in the flyte host if not present in test data")
 	cmd.Flags().StringVarP(&format, "format", "f", "json", "Output format. One of: json|yaml")
 	return cmd
 }
 
-func runTestCmd(testFilePath, format string) (string, error) {
+func runTestCmd(testFilePath string) (string, error) {
 	var step testStep
 	if err := unmarshalFile(testFilePath, &step); err != nil {
 		return "", err
@@ -51,7 +59,7 @@ func runTestCmd(testFilePath, format string) (string, error) {
 		return "", err
 	}
 
-	out, err := marshal(action, format)
+	out, err := marshal(action)
 	if err != nil {
 		return "", err
 	}
@@ -79,8 +87,7 @@ type event struct {
 }
 
 func (t testStep) execute() (*testAction, error) {
-	//override default datastore func which is using mongo to get data item
-	//use static map instead which can be passed in the input file
+	//override flyte's default datastore function
 	template.AddStaticContextEntry("datastore", datastoreFn(t.TestData.Datastore))
 
 	e := execution.Event{
@@ -130,7 +137,7 @@ func unmarshalFile(filename string, v interface{}) error {
 	}
 }
 
-func marshal(v interface{}, format string) ([]byte, error) {
+func marshal(v interface{}) ([]byte, error) {
 	switch format {
 	case "yaml":
 		return yaml.Marshal(v)
@@ -139,17 +146,67 @@ func marshal(v interface{}, format string) ([]byte, error) {
 	}
 }
 
+// datastore function which is backed by a map
+// first search for item in the map, if not present try to lookup in the flyte host
 func datastoreFn(datastore map[string]interface{}) func(string) interface{} {
+
 	if datastore == nil {
 		datastore = map[string]interface{}{}
 	}
 	return func(key string) interface{} {
 		v, ok := datastore[key]
 		if !ok {
-			panic(fmt.Errorf("cannot find datastore item key=%s", key))
+			if dsLookup {
+				v, err := findDatastoreItem(key)
+				if err != nil {
+					panic(fmt.Errorf("cannot lookup datastore item key=%s: %v", key, err))
+				}
+				return v
+			} else {
+				panic(fmt.Errorf("cannot find datastore item key=%s", key))
+			}
 		}
 		return v
 	}
+}
+
+func findDatastoreItem(key string) (interface{}, error) {
+
+	resp, err := client.Get(datastoreItemURL(key))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("invalid http response %d %s", resp.StatusCode, resp.Status)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return unmarshalValue(b, resp.Header.Get(httputil.HeaderContentType))
+}
+
+// parse data into the expected struct
+// based on the behaviour of `github.com/HotelsDotCom/flyte/datastore.GetDataStoreValue`
+func unmarshalValue(b []byte, contentType string) (interface{}, error) {
+
+	if !strings.HasPrefix(contentType, httputil.MediaTypeJson) && !strings.HasPrefix(contentType, "text/json") {
+		return string(b), nil
+	}
+
+	value := map[string]interface{}{}
+	if err := json.Unmarshal(b, &value); err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
+func datastoreItemURL(key string) string {
+	return fmt.Sprintf("http://%s%s/%s", viper.GetString(hostFlagName), flytepath.DatastorePath, key)
 }
 
 const testCmdLong = `

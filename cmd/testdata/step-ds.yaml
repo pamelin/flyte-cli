@@ -1,0 +1,16 @@
+---
+step:
+  id: status
+  event:
+    packName: Slack
+    name: ReceivedMessage
+  command:
+    packName: Slack
+    name: SendMessage
+    input:
+      message: '{{datastore(''env'')|key:''flyte''|key:''status''}}'
+testData:
+  event:
+    pack:
+      name: Slack
+    name: ReceivedMessage

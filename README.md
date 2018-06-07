@@ -66,6 +66,10 @@ testData:
   datastore:
     message: 'I''m up and running :run:'
 ```
+#### What is this datastore stuff?
+By default test will try to find datastore items in the test data however if it is not available it will try to lookup
+items in the flyte host. You can turn off lookup by passing `--ds-lookup=false` flag.
+
 
 ### Upload command
 Upload flow from a file to a flyte host. File must be in JSON or YAML format.
