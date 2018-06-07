@@ -31,7 +31,7 @@ func newTestCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = fmt.Fprint(c.OutOrStdout(), output)
+			_, err = fmt.Fprintln(c.OutOrStdout(), output)
 			return err
 		},
 	}
@@ -60,20 +60,41 @@ func runTestCmd(testFilePath, format string) (string, error) {
 }
 
 type testStep struct {
-	Step      execution.Step
-	Event     execution.Event
+	Step     execution.Step
+	TestData testData
+}
+
+type testData struct {
+	Event     event
 	Context   map[string]string
 	Datastore map[string]interface{}
+}
+
+// not sure why execution.Event replaces name with json tag event
+// this is here so we can use `name` in the files instead of `event`
+type event struct {
+	Name    string         `json:"name"`
+	Pack    execution.Pack `json:"pack"`
+	Payload jsont.Json     `json:"payload,omitempty"`
 }
 
 func (t testStep) execute() (*testAction, error) {
 	//override default datastore func which is using mongo to get data item
 	//use static map instead which can be passed in the input file
-	template.AddStaticContextEntry("datastore", datastoreFn(t.Datastore))
+	template.AddStaticContextEntry("datastore", datastoreFn(t.TestData.Datastore))
 
-	action, err := t.Step.Execute(t.Event, t.Context)
+	e := execution.Event{
+		Pack:    t.TestData.Event.Pack,
+		Name:    t.TestData.Event.Name,
+		Payload: t.TestData.Event.Payload,
+	}
+
+	action, err := t.Step.Execute(e, t.TestData.Context)
 	if err != nil {
 		return nil, err
+	}
+	if action == nil {
+		return nil, nil
 	}
 	return &testAction{
 		Name:       action.Name,
@@ -133,10 +154,11 @@ func datastoreFn(datastore map[string]interface{}) func(string) interface{} {
 
 const testCmdLong = `
 
-Test step execution with provided test file containing step, trigger event and optional 
-context and datastore items. It should be in json or yaml format.
+Executes the step in the provided file. Test files MUST contain the
+step, and trigger event definitions, and can optionally contain context and datastore
+items as required.
 
-Example:
+Example yaml file:
 ---
 step:
   id: status
@@ -151,5 +173,5 @@ step:
 event:
   pack:
     name: Slack
-  event: ReceivedMessage
+  name: ReceivedMessage
 `

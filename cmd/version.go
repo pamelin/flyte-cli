@@ -3,14 +3,21 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-func newVersionCommand() *cobra.Command{
+const (
+	cliVersion = "v0.2"
+	apiVersion = "v1"
+)
+
+func newVersionCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show the flyte cli version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Client version:\tv0.1\nAPI version:\tv1")
+			host := viper.GetString(hostFlagName)
+			fmt.Printf("Client version:\t%s\nAPI version:\t%s\nAPI host:\t%s\n", cliVersion, apiVersion, host)
 		},
 	}
 	return cmd

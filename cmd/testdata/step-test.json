@@ -18,23 +18,25 @@
       }
     }
   },
-  "event": {
-    "pack": {
-      "name": "Slack"
-    },
-    "event": "ReceivedMessage",
-    "payload": {
-      "message": "flyte status",
-      "user": {
-        "id": "johnny"
+  "testData":{
+    "event": {
+      "pack": {
+        "name": "Slack"
       },
-      "channelId": "123"
-    }
-  },
-  "context": {
+      "name": "ReceivedMessage",
+      "payload": {
+        "message": "flyte status",
+        "user": {
+          "id": "johnny"
+        },
+        "channelId": "123"
+      }
+    },
+    "context": {
       "ChannelID": "123"
-  },
-  "datastore": {
-    "message": "I'm up and running :run:"
+    },
+    "datastore": {
+      "message": "I'm up and running :run:"
+    }
   }
 }
