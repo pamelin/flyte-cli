@@ -14,5 +14,3 @@ testData:
     pack:
       name: Slack
     name: ReceivedMessage
-    payload:
-      message: flyte status

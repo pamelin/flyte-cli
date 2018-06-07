@@ -67,8 +67,7 @@ func getContentType(filename string) (string, error) {
 
 // YEAH discovery will be in the next version
 func flowsURL(host string) string {
-	scheme := "http"
-	return fmt.Sprintf("%s://%s%s", scheme, host, flytepath.FlowsPath)
+	return fmt.Sprintf("http://%s%s", host, flytepath.FlowsPath)
 }
 
 func processResponse(resp *http.Response, out io.Writer) error {

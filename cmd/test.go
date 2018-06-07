@@ -206,8 +206,7 @@ func unmarshalValue(b []byte, contentType string) (interface{}, error) {
 }
 
 func datastoreItemURL(key string) string {
-	scheme := "http"
-	return fmt.Sprintf("%s://%s%s/%s", scheme, viper.GetString(hostFlagName), flytepath.DatastorePath, key)
+	return fmt.Sprintf("http://%s%s/%s", viper.GetString(hostFlagName), flytepath.DatastorePath, key)
 }
 
 const testCmdLong = `
