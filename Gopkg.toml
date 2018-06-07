@@ -24,17 +24,30 @@
 #   go-tests = true
 #   unused-packages = true
 
-[[constraint]]
-  name = "github.com/spf13/cobra"
-  branch = "master"
+
+[[override]]
+  branch = "good-citizen"
+  name = "github.com/HotelsDotCom/go-logger"
 
 [[constraint]]
   branch = "master"
   name = "github.com/HotelsDotCom/flyte"
 
-[[override]]
-  branch = "good-citizen"
-  name = "github.com/HotelsDotCom/go-logger"
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/spf13/viper"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.2.1"
 
 [prune]
   go-tests = true

@@ -1,5 +1,4 @@
 # flyte-cli
-
 `flyte-cli` is a command line client for [flyte](https://github.com/HotelsDotCom/flyte)
 
 ## Make it
@@ -12,6 +11,13 @@ Build & Install:
 $ make install
 ```
 
+## Configure it
+Please specify the `FLYTE_HOST` environment variable which will be used to make flyte API calls. For example:
+```
+FLYTE_HOST=localhost:8080
+```
+This can be overridden/set by optional flag `--host`
+
 ## Use it
 This is good place to start:
 ```
@@ -21,13 +27,16 @@ The commands are:
 ```
 help        Help about any command
 test        Test step execution
+upload      Upload flow from a file
 version     Show the flyte version information
 ```
 
 ### Test command
-Test command is executing step with provided test file containing step, trigger event and optional context and datastore items. It should be in json or yaml format.
+Executes the step in the provided file. Test files MUST contain the
+step, and trigger event definitions, and can optionally contain context and datastore
+items as required. It should be in json or yaml format.
 
-Example:
+Example yaml file:
 ```
 step:
   id: status
@@ -43,18 +52,34 @@ step:
     input:
       channelId: "{{ Context.ChannelID }}"
       message: 'Hey <@{{ Context.UserID }}>, {{datastore(''message'')}}'
-event:
-  pack:
-    name: Slack
-  event: ReceivedMessage
-  payload:
-    message: flyte status
-    user:
-      id: johny
-context:
-  ChannelID: '123'
-datastore:
-  message: 'I''m up and running :run:' 
-```  
+testData:
+  event:
+    pack:
+      name: Slack
+    name: ReceivedMessage
+    payload:
+      message: flyte status
+      user:
+        id: johnny
+  context:
+    ChannelID: '123'
+  datastore:
+    message: 'I''m up and running :run:'
+```
+
+### Upload command
+Upload flow from a file to a flyte host. File must be in JSON or YAML format.
+Flyte host could be specified by setting $FLYTE_HOST or overridden by the --host option.
+Please refer to flyte documentation for file layout.
+
+Examples:
+```
+	# Upload a flow from my_flow.json file to flyte host specified by $FLYTE_HOST env variable
+	flyte upload ./my_flow.json
+
+	# Upload a flow from my_flow.yaml file to flyte host at 127.0.0.1:8080
+	flyte upload ./my_flow.yaml --host 127.0.0.1:8080
+```
+
 ## Abuse it
 Feel free to experiment and extend it by contributing back :relaxed:

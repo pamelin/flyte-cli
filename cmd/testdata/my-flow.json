@@ -1,0 +1,25 @@
+{
+  "name": "my-flow",
+  "description": "My awesome flow",
+  "steps": [
+    {
+      "event": {
+        "packName": "Slack",
+        "name": "ReceivedMessage"
+      },
+      "criteria": "{{ Event.Payload.message|match:'^flyte status$' }}",
+      "context": {
+        "UserID": "{{ Event.Payload.user.id }}",
+        "ChannelID": "{{ Event.Payload.channelId }}"
+      },
+      "command": {
+        "packName": "Slack",
+        "name": "SendMessage",
+        "input": {
+          "channelId": "{{ Context.ChannelID }}",
+          "message": "Hey <@{{ Context.UserID }}>, I'm up and running :run:"
+        }
+      }
+    }
+  ]
+}
