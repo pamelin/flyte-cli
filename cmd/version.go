@@ -11,13 +11,13 @@ const (
 	apiVersion = "v1"
 )
 
-func newVersionCommand() *cobra.Command {
+func newCmdVersion() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show the flyte cli version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			host := viper.GetString(hostFlagName)
-			fmt.Printf("Client version:\t%s\nAPI version:\t%s\nAPI URL:\t%s\n", cliVersion, apiVersion, host)
+			fmt.Printf("Client version:\t%s\nAPI version:\t%s\nAPI URL:\t%s\n",
+				cliVersion, apiVersion, viper.GetString(flagURL))
 		},
 	}
 	return cmd

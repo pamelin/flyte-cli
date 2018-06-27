@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http/httptest"
 	"net/http"
-	"strings"
 	"io/ioutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/HotelsDotCom/flyte/httputil"
@@ -17,7 +16,7 @@ type requestRec struct {
 	body    []byte
 }
 
-func TestUploadCommand_ShouldUploadFlowFromJsonFile(t *testing.T) {
+func TestUploadFlow_ShouldUploadFlowFromJsonFile(t *testing.T) {
 	//given
 	rec := requestRec{}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,10 +28,9 @@ func TestUploadCommand_ShouldUploadFlowFromJsonFile(t *testing.T) {
 	defer ts.Close()
 
 	flowFile := "./testdata/my-flow.json"
-	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand("upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", "flow", "-f", flowFile, "--url", ts.URL)
 	require.NoError(t, err)
 
 	//then
@@ -47,35 +45,31 @@ func TestUploadCommand_ShouldUploadFlowFromJsonFile(t *testing.T) {
 	assert.Contains(t, output, "Location: "+flytepath.FlowsPath+"/my-flow")
 }
 
-func TestUploadCommand_ShouldFailWhenFlyteHostReturnsNon201(t *testing.T) {
+func TestUploadFlow_ShouldFailWhenFlyteAPIReturnsNon201(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}))
 	defer ts.Close()
 
-	host := strings.Replace(ts.URL, "http://", "", -1)
-
-	_, err := executeCommand("upload", "./testdata/my-flow.json", "--host="+host)
+	_, err := executeCommand("upload", "flow", "-f", "./testdata/my-flow.json", "--url", ts.URL)
 	require.Error(t, err)
 
 	assert.Contains(t, err.Error(), "cannot upload flow\nHTTP/1.1 400 Bad Request")
 }
 
-func TestUploadCommand_ShouldFailForNonJsonOrYamlFile(t *testing.T) {
+func TestUploadFlow_ShouldFailForNonJsonOrYamlFile(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}))
 	defer ts.Close()
 
-	host := strings.Replace(ts.URL, "http://", "", -1)
-
-	_, err := executeCommand("upload", "./testdata/my-flow.haha", "--host="+host)
+	_, err := executeCommand("upload", "flow", "-f", "./testdata/my-flow.haha", "--url", ts.URL)
 	require.Error(t, err)
 
-	assert.Contains(t, err.Error(), "cannot upload flow: unsupported file format .haha")
+	assert.Contains(t, err.Error(), "cannot upload flow: unsupported file type it must be JSON or YAML")
 }
 
-func TestUploadCommand_ShouldUploadFlowFromYamlFile(t *testing.T) {
+func TestUploadFlow_ShouldUploadFlowFromYamlFile(t *testing.T) {
 	//given
 	rec := requestRec{}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -87,10 +81,9 @@ func TestUploadCommand_ShouldUploadFlowFromYamlFile(t *testing.T) {
 	defer ts.Close()
 
 	flowFile := "./testdata/my-flow.yaml"
-	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand("upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", "flow", "-f", flowFile, "--url", ts.URL)
 	require.NoError(t, err)
 
 	//then
@@ -105,7 +98,7 @@ func TestUploadCommand_ShouldUploadFlowFromYamlFile(t *testing.T) {
 	assert.Contains(t, output, "Location: "+flytepath.FlowsPath+"/my-flow")
 }
 
-func TestUploadCommand_ShouldUploadFlowFromYmlFile(t *testing.T) {
+func TestUploadFlow_ShouldUploadFlowFromYmlFile(t *testing.T) {
 	//given
 	rec := requestRec{}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -117,10 +110,9 @@ func TestUploadCommand_ShouldUploadFlowFromYmlFile(t *testing.T) {
 	defer ts.Close()
 
 	flowFile := "./testdata/my-flow.yml"
-	host := strings.Replace(ts.URL, "http://", "", -1)
 
 	//when
-	output, err := executeCommand("upload", flowFile, "--host="+host)
+	output, err := executeCommand("upload", "flow", "-f", flowFile, "--url", ts.URL)
 	require.NoError(t, err)
 
 	//then
