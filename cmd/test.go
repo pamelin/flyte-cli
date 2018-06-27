@@ -9,62 +9,76 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"github.com/ghodss/yaml"
-	"errors"
 	"path/filepath"
-	"github.com/HotelsDotCom/flyte/flytepath"
 	"strings"
 	"github.com/HotelsDotCom/flyte/httputil"
 	"github.com/spf13/viper"
 )
 
-var (
+var argsTest = struct {
+	filename string
 	dsLookup bool
 	format   string
-)
+}{}
 
-func newTestCommand() *cobra.Command {
+func newCmdTest() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "test file",
+		Use:   "test -f FILENAME",
 		Short: "Test step execution with trigger event and optional context",
-		Long:  testCmdLong,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errors.New("you need to provide a test file")
-			}
-			return nil
-		},
-		RunE: func(c *cobra.Command, args []string) error {
-			output, err := runTestCmd(args[0])
-			if err != nil {
-				return err
-			}
-			_, err = fmt.Fprintln(c.OutOrStdout(), output)
-			return err
-		},
+		Long:  longTest,
+		RunE:  runTest,
 	}
 
-	cmd.Flags().BoolVar(&dsLookup, "ds-lookup", true, "lookup datastore item in the flyte host if not present in test data")
-	cmd.Flags().StringVarP(&format, "format", "f", "json", "Output format. One of: json|yaml")
+	cmd.Flags().StringVarP(&argsTest.filename, flagFilename, "f", "", "filename of the file with step and test data")
+	cmd.MarkFlagRequired(flagFilename)
+
+	cmd.Flags().BoolVar(&argsTest.dsLookup, flagDslookup, true, "lookup datastore item in the flyte API unless present in test data")
+	cmd.Flags().StringVar(&argsTest.format, flagFormat, "json", "Output format. One of: json|yaml")
 	return cmd
 }
 
-func runTestCmd(testFilePath string) (string, error) {
+const longTest = `
+Executes the step in the provided file. Test files MUST contain the
+step, and trigger event definitions, and can optionally contain context and datastore
+items as required.
+
+Example yaml file:
+---
+step:
+  id: status
+  event:
+    packName: Slack
+    name: ReceivedMessage
+  command:
+    packName: Slack
+    name: SendMessage
+    input:
+      message: 'Hello'
+testData
+  event:
+    pack:
+      name: Slack
+    name: ReceivedMessage
+`
+
+func runTest(c *cobra.Command, args []string) error {
 	var step testStep
-	if err := unmarshalFile(testFilePath, &step); err != nil {
-		return "", err
+	if err := unmarshalFile(argsTest.filename, &step); err != nil {
+		return err
 	}
 
-	action, err := step.execute()
+	action, err := step.execute(argsTest.dsLookup, viper.GetString(flagURL))
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	out, err := marshal(action)
+	out, err := marshal(action, argsTest.format)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return string(out), nil
+	_, err = fmt.Fprintln(c.OutOrStdout(), string(out))
+	return err
 }
 
 type testStep struct {
@@ -86,9 +100,9 @@ type event struct {
 	Payload jsont.Json     `json:"payload,omitempty"`
 }
 
-func (t testStep) execute() (*testAction, error) {
+func (t testStep) execute(dsLookup bool, apiURL string) (*testAction, error) {
 	//override flyte's default datastore function
-	template.AddStaticContextEntry("datastore", datastoreFn(t.TestData.Datastore))
+	template.AddStaticContextEntry("datastore", datastoreFn(t.TestData.Datastore, dsLookup, apiURL))
 
 	e := execution.Event{
 		Pack:    t.TestData.Event.Pack,
@@ -137,7 +151,7 @@ func unmarshalFile(filename string, v interface{}) error {
 	}
 }
 
-func marshal(v interface{}) ([]byte, error) {
+func marshal(v interface{}, format string) ([]byte, error) {
 	switch format {
 	case "yaml":
 		return yaml.Marshal(v)
@@ -147,8 +161,8 @@ func marshal(v interface{}) ([]byte, error) {
 }
 
 // datastore function which is backed by a map
-// first search for item in the map, if not present try to lookup in the flyte host
-func datastoreFn(datastore map[string]interface{}) func(string) interface{} {
+// first search for item in the map, if not present try to lookup in the flyte API
+func datastoreFn(datastore map[string]interface{}, dsLookup bool, apiURL string) func(string) interface{} {
 
 	if datastore == nil {
 		datastore = map[string]interface{}{}
@@ -157,7 +171,7 @@ func datastoreFn(datastore map[string]interface{}) func(string) interface{} {
 		v, ok := datastore[key]
 		if !ok {
 			if dsLookup {
-				v, err := findDatastoreItem(key)
+				v, err := findDatastoreItem(dsItemURL(apiURL, key))
 				if err != nil {
 					panic(fmt.Errorf("cannot lookup datastore item key=%s: %v", key, err))
 				}
@@ -170,9 +184,9 @@ func datastoreFn(datastore map[string]interface{}) func(string) interface{} {
 	}
 }
 
-func findDatastoreItem(key string) (interface{}, error) {
+func findDatastoreItem(url string) (interface{}, error) {
 
-	resp, err := client.Get(datastoreItemURL(key))
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -204,31 +218,3 @@ func unmarshalValue(b []byte, contentType string) (interface{}, error) {
 	}
 	return value, nil
 }
-
-func datastoreItemURL(key string) string {
-	return fmt.Sprintf("http://%s%s/%s", viper.GetString(hostFlagName), flytepath.DatastorePath, key)
-}
-
-const testCmdLong = `
-
-Executes the step in the provided file. Test files MUST contain the
-step, and trigger event definitions, and can optionally contain context and datastore
-items as required.
-
-Example yaml file:
----
-step:
-  id: status
-  event:
-    packName: Slack
-    name: ReceivedMessage
-  command:
-    packName: Slack
-    name: SendMessage
-    input:
-      message: 'Hello'
-event:
-  pack:
-    name: Slack
-  name: ReceivedMessage
-`

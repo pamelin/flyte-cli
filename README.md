@@ -12,11 +12,11 @@ $ make install
 ```
 
 ## Configure it
-Please specify the `FLYTE_HOST` environment variable which will be used to make flyte API calls. For example:
+Please specify the `FLYTE_API` environment variable which will be used to make flyte API calls. For example:
 ```
-FLYTE_HOST=localhost:8080
+FLYTE_API=http://localhost:8080
 ```
-This can be overridden/set by optional flag `--host`
+This can be overridden/set by optional flag `--url`
 
 ## Use it
 This is good place to start:
@@ -27,7 +27,7 @@ The commands are:
 ```
 help        Help about any command
 test        Test step execution
-upload      Upload flow from a file
+upload      Upload resource from a file
 version     Show the flyte version information
 ```
 
@@ -68,22 +68,40 @@ testData:
 ```
 #### What is this datastore stuff?
 By default test will try to find datastore items in the test data however if it is not available it will try to lookup
-items in the flyte host. You can turn off lookup by passing `--ds-lookup=false` flag.
+items in the flyte API. You can turn off lookup by passing `--ds-lookup=false` flag.
 
+#### Upload command
+Upload a resource from a file or from stdin to a flyte API. Valid resource types include:
 
-### Upload command
-Upload flow from a file to a flyte host. File must be in JSON or YAML format.
-Flyte host could be specified by setting $FLYTE_HOST or overridden by the --host option.
+  * datastore (aka ds)
+  * flow
+
+#### Upload flow command
+Upload flow from a file or from stdin to a flyte API. File must be in JSON or YAML format.
+Flyte API could be specified by setting $FLYTE_API or overridden by the --url option.
 Please refer to flyte documentation for file layout.
 
 Examples:
 ```
-	# Upload a flow from my_flow.json file to flyte host specified by $FLYTE_HOST env variable
-	flyte upload ./my_flow.json
+	# Upload a flow from my_flow.json file to flyte API specified by $FLYTE_API env variable
+	flyte upload flow -f ./my_flow.json
 
-	# Upload a flow from my_flow.yaml file to flyte host at 127.0.0.1:8080
-	flyte upload ./my_flow.yaml --host 127.0.0.1:8080
+	# Upload a flow from my_flow.yaml file to flyte API at http://127.0.0.1:8080
+	flyte upload flow -f ./my_flow.yaml --url http://127.0.0.1:8080
 ```
 
+#### Upload datastore (aka ds) item command
+Upload a datastore item from a file or from stdin to a flyte API.
+Flyte API could be specified by setting $FLYTE_API or overridden by the --url option
+
+Examples:
+```
+	# Upload a datastore item from env.json file to flyte API specified by $FLYTE_API
+	flyte upload ds -f ./env.json
+
+	# Upload a datastore item from my-script.sh file to flyte API at http://127.0.0.1:8080
+	flyte upload ds -f ./my-script.sh --url http://127.0.0.1:8080
+```
+	
 ## Abuse it
 Feel free to experiment and extend it by contributing back :relaxed:
