@@ -6,8 +6,6 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	"time"
-	"path/filepath"
-	"github.com/HotelsDotCom/flyte/httputil"
 )
 
 const (
@@ -45,18 +43,5 @@ func newCmdFlyte() *cobra.Command {
 func Execute() {
 	if err := newCmdFlyte().Execute(); err != nil {
 		os.Exit(1)
-	}
-}
-
-func getContentType(filename string) string {
-	switch filepath.Ext(filename) {
-	case ".json":
-		return httputil.MediaTypeJson
-	case ".yaml", ".yml":
-		return httputil.MediaTypeYaml
-	case "sh":
-		return "application/x-sh"
-	default:
-		return "application/octet-stream"
 	}
 }

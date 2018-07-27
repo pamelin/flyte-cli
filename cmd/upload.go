@@ -8,7 +8,6 @@ func newCmdUpload() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "upload TYPE",
 		Short: "Upload a resource from a file or from stdin",
-		//ValidArgs: []string{"flow", "datastore", "ds"},
 		Long:    longUpload,
 		Example: exampleUpload,
 	}
@@ -26,10 +25,10 @@ Upload a resource from a file or from stdin to a flyte API. Valid resource types
   * flow`
 
 const exampleUpload = `  # Upload a flow from my_flow.json file to flyte API specified by $FLYTE_API
-  flyte upload flow ./my_flow.json
+  flyte upload flow -f ./my_flow.json
 
   # Upload a flow from my_flow.yaml file to flyte API at http://127.0.0.1:8080
-  flyte upload flow ./my_flow.yaml --url http://127.0.0.1:8080`
+  flyte upload flow -f ./my_flow.yaml --url http://127.0.0.1:8080`
 
 const usageTmplUpload = `Usage:
   {{.UseLine}}{{if .HasExample}}

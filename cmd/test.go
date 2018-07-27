@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"github.com/ghodss/yaml"
-	"path/filepath"
 	"strings"
 	"github.com/HotelsDotCom/flyte/httputil"
 	"github.com/spf13/viper"
@@ -42,8 +41,31 @@ Executes the step in the provided file. Test files MUST contain the
 step, and trigger event definitions, and can optionally contain context and datastore
 items as required.
 
-Example yaml file:
+Examples:
+  # Test a step from my_step.yaml file
+  flyte test -f ./my_step.yaml
+
+and the yaml file can look like this:
 ---
+step:
+  id: status
+  event:
+    packName: Slack
+    name: ReceivedMessage
+  command:
+    packName: Slack
+    name: SendMessage
+    input:
+      message: 'Hello'
+testData:
+  event:
+    pack:
+      name: Slack
+    name: ReceivedMessage
+
+
+You can run step test from stdin for example:
+cat <<EOF | flyte test -f -
 step:
   id: status
   event:
@@ -59,6 +81,7 @@ testData
     pack:
       name: Slack
     name: ReceivedMessage
+EOF
 `
 
 func runTest(c *cobra.Command, args []string) error {
@@ -135,12 +158,13 @@ type testAction struct {
 }
 
 func unmarshalFile(filename string, v interface{}) error {
-	data, err := ioutil.ReadFile(filename)
+	data, err := readFile(filename)
 	if err != nil {
 		return err
 	}
 
-	ext := filepath.Ext(filename)
+	ext := detectExt(filename, data)
+
 	switch ext {
 	case ".json":
 		return json.Unmarshal(data, v)
