@@ -39,10 +39,10 @@ Flyte API could be specified by setting $FLYTE_API or overridden by the --url op
 
 Examples:
   # Upload a flow from my_flow.json file to flyte api specified by $FLYTE_API
-  flyte upload flow ./my_flow.json
+  flyte upload flow -f ./my_flow.json
 
   # Upload a flow from my_flow.yaml file to flyte api at http://127.0.0.1:8080
-  flyte upload flow ./my_flow.yaml --url http://127.0.0.1:8080
+  flyte upload flow -f ./my_flow.yaml --url http://127.0.0.1:8080
 `
 
 func runUploadFlow(c *cobra.Command, args []string) error {
